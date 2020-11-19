@@ -59,6 +59,7 @@ class Data:
         ax.set_zlabel('X3 Label')
         ax.set_title('Data distribution')
         plt.show()
+        return fig
 
     def mapClassifyWithTrueData(self):
         pxGivenL = []
@@ -113,5 +114,49 @@ if __name__ == "__main__":
         results = pickle.load(input)
         pp = pprint.PrettyPrinter(indent=4)
         pp.pprint(results)
-    results['5000']['dataset'].plotData3D()
     
+    # plot 5k dataset
+    fig = results['5000']['dataset'].plotData3D()
+
+    # plot histograms of perceptron accuracies
+    for dataset_key, dataset_results in results.items():
+        fig = plt.figure()
+        plt.bar(range(1,20), list(dataset_results['hyperParameter_accuracy'].values()), color='blue')  
+        plt.xlabel('Perceptrons')
+        plt.ylabel('Model accuracy')
+        plt.title('MLP chosen perceptrons @ data set size = ' + dataset_key)
+        plt.show()
+
+    # Plot optimal perceptrons
+    chosenPerceptrons = []
+    datasetSizes = []
+    for dataset_key, dataset_results in results.items():
+        chosenPerceptrons.append(dataset_results['optimal_hyperparameter'])
+        datasetSizes.append(dataset_results['dataset'].count)
+    print(datasetSizes)
+    print(chosenPerceptrons)
+    plt.bar(datasetSizes, chosenPerceptrons, width=100, color='b') 
+    plt.xlabel('Dataset Sizes')
+    plt.ylabel('Optimal Perceptron Count')    
+    plt.xticks(datasetSizes)
+    plt.yticks(chosenPerceptrons)
+    plt.show()
+    
+    # Map Accuracy vs Optimal NN accuracy
+    map_accuracy = []
+    optimal_NN_accuracy = []
+    datasetSizes = []
+    gaussians = results['5000']['dataset'].gaussianConditionals
+    dValid = Data()
+    dValid.generateData(gaussians,100000)
+    for dataset_key, dataset_results in results.items():
+        map_accuracy.append(dValid.mapClassifyWithTrueData())
+        datasetSizes.append(dataset_results['dataset'].count)
+        optimal_NN_accuracy.append(dataset_results['fittedModel_validation_accuracy'])
+    plt.plot(datasetSizes,map_accuracy, color='g', label='MAP Classifier with knowledge')
+    plt.plot(datasetSizes,optimal_NN_accuracy, color='r', label='Optimally selected NN Classifier')
+    plt.xlabel('Dataset Size')
+    plt.ylabel('Optimal Model Accuracy')
+    plt.gca().set_yticklabels(['{:.2f}%'.format(x*100) for x in plt.gca().get_yticks()]) 
+    plt.legend()
+    plt.show()
