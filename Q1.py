@@ -106,12 +106,30 @@ class ModelHelper:
         return (np.count_nonzero(classifyResult==data.labels))/data.count
 
 def kfoldCrossValidation(kfolds, dataset, modelCreator, modelFitter, modelEvaluater, hyperparamater_range):
+    def keywithmaxval(d):
+        v=list(d.values())
+        k=list(d.keys())
+        return k[v.index(max(v))]
+
     hyperparameter_accuracy = {}
     for hyperparameter in hyperparamater_range:
-            model = modelCreator(hyperparameter)
-            partitionedDataset = dataset.partition()
-            for k in range(0, kfolds):
+        print('Hyperparameter = ' + str(hyperparameter))
+        model = modelCreator(hyperparameter)
+        partitionedDataset = dataset.partition(kfolds)
+        accuracy = [0]*kfolds
+        for k in range(0, kfolds):
+            print('K = ' + str(k))
+            trainingData = Data.fuse(partitionedDataset[0:k] + partitionedDataset[k+1:len(partitionedDataset)])
+            validationData = partitionedDataset[k:k+1][0]
+            fittedModel = modelFitter(model, trainingData)
+            accuracy[k] = modelEvaluater(model, validationData)
+        hyperparameter_accuracy[hyperparameter] = np.mean(accuracy)
 
+    optimal_hyperparameter = keywithmaxval(hyperparameter_accuracy)
+    optimal_model = modelCreator(optimal_hyperparameter)
+    fitted_optimal_model = modelFitter(optimal_model, dataset)
+
+    return (optimal_hyperparameter, hyperparameter_accuracy, fitted_optimal_model)
 
 
 if __name__ == "__main__":
@@ -129,7 +147,7 @@ if __name__ == "__main__":
     d2.generateData([c1, c2, c3, c4], 500)
     d3.generateData([c1, c2, c3, c4], 1000)
     d4.generateData([c1, c2, c3, c4], 5000)
-    datasets = [d1, d2, d3, d4]
+    datasets = [d3]
     dvalid.generateData([c1, c2, c3, c4], 100000)
 
     kfolds = 10
@@ -150,18 +168,14 @@ if __name__ == "__main__":
 
         modelFitter = partial(ModelHelper.fitModel, batch_size)
 
-        start = timeit.default_timer()
-        (fittedModel, accuracy, optimal_hyperparameter, hyperParameter_accuracy) = kfoldCrossValidation(kfolds, eachDataset, modelCreator, modelFitter, ModelHelper.evalAccuracy, hyperparamater_range = range(1,20))
-        fittedModel_validation_accuracy = ModelHelper.evalAccuracy(fittedModel, dvalid)
-        stop = timeit.default_timer()
-
-        print('Dataset ' + str(str(eachDataset.count)) + ' Time (20 perceptrons): ', stop - start)  
+        (optimal_hyperparameter, hyperParameter_accuracy, fitted_optimal_model) = kfoldCrossValidation(kfolds, eachDataset, modelCreator, modelFitter, ModelHelper.evalAccuracy, hyperparamater_range = range(1,5))
+        fittedModel_validation_accuracy = ModelHelper.evalAccuracy(fitted_optimal_model, dvalid)
 
         results[str(eachDataset.count)]['dataset'] = eachDataset
         results[str(eachDataset.count)]['optimal_hyperparameter'] = optimal_hyperparameter
         results[str(eachDataset.count)]['hyperParameter_accuracy'] = hyperParameter_accuracy
         results[str(eachDataset.count)]['fittedModel_validation_accuracy'] = fittedModel_validation_accuracy
-        with open('final_results.pkl', 'wb') as output:
+        with open('TEST_final_results.pkl', 'wb') as output:
             pickle.dump(results, output, pickle.HIGHEST_PROTOCOL)
 
     print('Done')
