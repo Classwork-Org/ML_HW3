@@ -147,7 +147,7 @@ if __name__ == "__main__":
     d2.generateData([c1, c2, c3, c4], 500)
     d3.generateData([c1, c2, c3, c4], 1000)
     d4.generateData([c1, c2, c3, c4], 5000)
-    datasets = [d3]
+    datasets = [d1, d2, d3, d4]
     dvalid.generateData([c1, c2, c3, c4], 100000)
 
     kfolds = 10

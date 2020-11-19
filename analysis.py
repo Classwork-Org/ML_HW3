@@ -1,9 +1,4 @@
-import os
-import tensorflow as tf
-from tensorflow import keras
-from tensorflow.keras import layers
 import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
 import numpy as np
 from scipy.stats import multivariate_normal
 import math
@@ -58,7 +53,13 @@ class Data:
             x2 = self.features[labelIndexes,1]
             x3 = self.features[labelIndexes,2]
             ax.scatter(x1,x2,x3)
+        
+        ax.set_xlabel('X1 Label')
+        ax.set_ylabel('X2 Label')
+        ax.set_zlabel('X3 Label')
+        ax.set_title('Data distribution')
         plt.show()
+
     def mapClassifyWithTrueData(self):
         pxGivenL = []
         for eachClass in range(0, self.classCount):
@@ -112,3 +113,5 @@ if __name__ == "__main__":
         results = pickle.load(input)
         pp = pprint.PrettyPrinter(indent=4)
         pp.pprint(results)
+    results['5000']['dataset'].plotData3D()
+    
